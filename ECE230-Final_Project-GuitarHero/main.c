@@ -6,20 +6,6 @@
  * Authors: Josh Schrock and Lisa Sebastian
  * Last-modified: 2/6/2023
  *
- * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
- *
- *                MSP432P411x
- *             -----------------
- *         /|\|                 |
- *          | |                 |
- *          --|RST              |
- *            |            P2.4 |--> CCR1 - speaker
- *            |                 |
- *            |            PJ.2 |------
- *            |                 |     |
- *            |                 |    HFXT @ 48MHz
- *            |                 |     |
- *            |            PJ.3 |------
  *
 *******************************************************************************/
 #include "msp.h"
@@ -27,9 +13,14 @@
 /* Standard Includes */
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "csHFXT.h"
 #include "csLFXT.h"
 #include "pushButtons.h"
+#include "lcd.h"
+
+//clock define
+#define CLK_FREQUENCY       48000000    // MCLK using 48MHz HFXT
 
 /* note defines */
 #define NOTENONE 90.55
@@ -58,24 +49,30 @@
 #define NOTED5 587.33
 
 /* length defines */
-#define NOTEREST 3300
+#define NOTEREST 1000
 //#define SIXTEENTHNOTE 3278 //1024
-#define EIGHTNOTE 4110
-#define SIXTIENOTE 6000
-#define QUARTERNOTE 8220
-#define TIENOTE 13000
-#define HALFNOTE 16440
-#define WHOLENOTE 32880
+#define SIXTEENNOTE 3096
+#define EIGHTNOTE 7192
+#define SIXTIENOTE 11288
+#define QUARTERNOTE 15384
+#define TIENOTE 23576
+#define HALFNOTE 31768
+#define WHOLENOTE 64536
 
 /* song defines */
 #define NOTECNT 90
 const uint16_t noteArray[NOTECNT] =   {NOTEG4,      NOTENONE,  NOTED4,    NOTEG4,      NOTENONE,  NOTED4,      NOTEG4,    NOTED4,    NOTEG4,    NOTEB4,    NOTED5,      NOTENONE,  NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,    NOTEA4,    NOTEF4SHARP, NOTEA4,    NOTED4,      NOTENONE,    NOTEG4,    NOTENONE,  NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEG4,    NOTEC5,    NOTEF4SHARP, NOTEA4,    NOTEG4,    NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEA4,    NOTEC5,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEE4,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEB4,    NOTEA4,    NOTEG4,    NOTEA4,    NOTEB4,    NOTEB4,    NOTED5,    NOTEC5,    NOTEB4,    NOTEC5,    NOTED5,      NOTENONE,    NOTED4,   NOTEE4,   NOTED4,    NOTEC4,     NOTEC4,      NOTEC4,    NOTEB3,     NOTEB3,      NOTEB3,    NOTEA3,     NOTEA3,      NOTEG3,    NOTEF3SHARP, NOTEE3,    NOTEF3SHARP, NOTEG3,    NOTENONE,  NOTEA3,    NOTENONE,  NOTEB3,    NOTENONE,  NOTENONE};
 const uint16_t lengthArray[NOTECNT] = {QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, HALFNOTE, HALFNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE};
-//#define NOTECNT 2
-//const uint16_t noteArray[NOTECNT] = {NOTED5, NOTED5};
-//const uint16_t lengthArray[NOTECNT] = {EIGHTNOTE, EIGHTNOTE};
+typedef enum _GuitarButtons {
+    BONE,        /* (0x0) */
+    BTWO,        /* (0x1) */
+    BTHREE,      /* (0x2) */
+    BFOUR        /* (0x3) */
+} GuitarButtons;
+bool buttonExpexted[4] = {false, false, false, false}
 /* globals */
 int noteIndex = 0;
+
 
 /**
  * main.c
@@ -91,6 +88,8 @@ void main(void)
     configHFXT();
     configLFXT();
     BUTTONS_init();
+    // configures pins and delay library
+    configLCD(CLK_FREQUENCY);
 
     /* Configure GPIO for speaker */
     P2->DIR |= BIT4;            // set P2.4 as output
