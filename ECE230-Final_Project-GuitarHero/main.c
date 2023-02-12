@@ -70,9 +70,10 @@ typedef enum _GuitarButtons {
     BFOUR        /* (0x3) */
 } GuitarButtons;
 bool buttonExpexted[4] = {false, false, false, false}
+uint16_t buttonTime[4] = {0, 0, 0, 0}
 /* globals */
 int noteIndex = 0;
-
+int score = 0;
 
 /**
  * main.c
@@ -146,6 +147,48 @@ void main(void)
                 TIMER_A0->CTL |= 0x0010;
                 TIMER_A1->CTL |= 0x0020;
                 playing = true;
+            }
+        }
+        if (playing) {
+            int i = 0;
+            for (i; i<4; i++) {
+                if (buttonTime[i] > 0) {
+                    if (buttonExpexted[i]) {
+                        if(i == 1) {
+                            if (GB1_pressed()) {
+                                GB1_debounce();
+                                buttonExpexted[i] = false;
+                                score++;
+                            }
+                        }
+                        if(i == 2) {
+                            if (GB2_pressed()) {
+                                GB2_debounce();
+                                buttonExpexted[i] = false;
+                                score++;
+                            }
+                        }
+                        if(i == 3) {
+                            if (GB3_pressed()) {
+                                GB3_debounce();
+                                buttonExpexted[i] = false;
+                                score++;
+                            }
+                        }
+                        if(i == 4) {
+                            if (GB4_pressed()) {
+                                GB4_debounce();
+                                buttonExpexted[i] = false;
+                                score++;
+                            }
+                        }
+                    }
+                    buttontime[i]--;
+                } else {
+                    if (buttonExpexted[i]) {
+                        health--;
+                    }
+                }
             }
         }
     }
