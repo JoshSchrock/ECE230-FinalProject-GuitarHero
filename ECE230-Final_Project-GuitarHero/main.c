@@ -17,6 +17,7 @@
 #include "csHFXT.h"
 #include "csLFXT.h"
 #include "pushButtons.h"
+#include "guitarButtons.h"
 #include "lcd.h"
 
 //clock define
@@ -50,7 +51,6 @@
 
 /* length defines */
 #define NOTEREST 1000
-//#define SIXTEENTHNOTE 3278 //1024
 #define SIXTEENNOTE 3096
 #define EIGHTNOTE 7192
 #define SIXTIENOTE 11288
@@ -59,21 +59,33 @@
 #define HALFNOTE 31768
 #define WHOLENOTE 64536
 
+// guitar button defines
+#define SINGLENOTETIME 3000
+
+typedef enum _GuitarButtons {
+    BNONE,       /* (0x0) */
+    BONE,        /* (0x1) */
+    BTWO,        /* (0x2) */
+    BTHREE,      /* (0x3) */
+    BFOUR        /* (0x4) */
+} GuitarButtons;
+
 /* song defines */
 #define NOTECNT 90
 const uint16_t noteArray[NOTECNT] =   {NOTEG4,      NOTENONE,  NOTED4,    NOTEG4,      NOTENONE,  NOTED4,      NOTEG4,    NOTED4,    NOTEG4,    NOTEB4,    NOTED5,      NOTENONE,  NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,    NOTEA4,    NOTEF4SHARP, NOTEA4,    NOTED4,      NOTENONE,    NOTEG4,    NOTENONE,  NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEG4,    NOTEC5,    NOTEF4SHARP, NOTEA4,    NOTEG4,    NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEA4,    NOTEC5,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEE4,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEB4,    NOTEA4,    NOTEG4,    NOTEA4,    NOTEB4,    NOTEB4,    NOTED5,    NOTEC5,    NOTEB4,    NOTEC5,    NOTED5,      NOTENONE,    NOTED4,   NOTEE4,   NOTED4,    NOTEC4,     NOTEC4,      NOTEC4,    NOTEB3,     NOTEB3,      NOTEB3,    NOTEA3,     NOTEA3,      NOTEG3,    NOTEF3SHARP, NOTEE3,    NOTEF3SHARP, NOTEG3,    NOTENONE,  NOTEA3,    NOTENONE,  NOTEB3,    NOTENONE,  NOTENONE};
 const uint16_t lengthArray[NOTECNT] = {QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, HALFNOTE, HALFNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE};
-typedef enum _GuitarButtons {
-    BONE,        /* (0x0) */
-    BTWO,        /* (0x1) */
-    BTHREE,      /* (0x2) */
-    BFOUR        /* (0x3) */
-} GuitarButtons;
-bool buttonExpexted[4] = {false, false, false, false}
-uint16_t buttonTime[4] = {0, 0, 0, 0}
+const uint16_t buttonArray[NOTECNT] = {BTWO,        BONE,      BTWO,      BTHREE,      BNONE,     BTWO,      BTWO,      BTWO,      BTWO,      BTWO,      BTHREE,      BNONE,       BONE,         BNONE,     BNONE,     BNONE,       BNONE,     BNONE,     BNONE,     BNONE,     BNONE,       BNONE,     BNONE,       BNONE,       BNONE,     BNONE,     BNONE,   BNONE,     BNONE,     BNONE,     BNONE,     BNONE,       BNONE,       BNONE,     BNONE,     BNONE,        BNONE,    BNONE,     BNONE,   BNONE,     BNONE,     BNONE,     BNONE,     BNONE,        BNONE,       BNONE ,   BNONE,      BNONE,      BNONE,     BNONE};
+bool buttonExpected[4] = {false, false, false, false};
+uint16_t buttonTime[4] = {0, 0, 0, 0};
+
 /* globals */
 int noteIndex = 0;
 int score = 0;
+int health = 9;
+bool updateLCDflag = true;
+char buffer[3];
+
+void updateLCD(int score, int health);
 
 /**
  * main.c
@@ -89,6 +101,7 @@ void main(void)
     configHFXT();
     configLFXT();
     BUTTONS_init();
+    GB_init();
     // configures pins and delay library
     configLCD(CLK_FREQUENCY);
 
@@ -122,6 +135,11 @@ void main(void)
     // Configure CCR3 for Compare mode with interrupt enabled (no output mode - 0)
     TIMER_A1->CCTL[3] = 0x0010;
 
+    // Set initial period in CCR4 register. This assumes timer starts at 0
+    TIMER_A1->CCR[4] = SINGLENOTETIME;
+    // Configure CCR3 for Compare mode with interrupt enabled (no output mode - 0)
+    TIMER_A1->CCTL[4] = 0x0010;
+
     // Configure Timer_A1 in Continuous Mode with source ACLK prescale 1:1 and
     //  interrupt enabled
     //      Tick rate will be 32kHz with rollover at 0xFFFF
@@ -149,49 +167,101 @@ void main(void)
                 playing = true;
             }
         }
+        // what to do if playing
         if (playing) {
-            int i = 0;
-            for (i; i<4; i++) {
-                if (buttonTime[i] > 0) {
-                    if (buttonExpexted[i]) {
-                        if(i == 1) {
-                            if (GB1_pressed()) {
-                                GB1_debounce();
-                                buttonExpexted[i] = false;
-                                score++;
-                            }
-                        }
-                        if(i == 2) {
-                            if (GB2_pressed()) {
-                                GB2_debounce();
-                                buttonExpexted[i] = false;
-                                score++;
-                            }
-                        }
-                        if(i == 3) {
-                            if (GB3_pressed()) {
-                                GB3_debounce();
-                                buttonExpexted[i] = false;
-                                score++;
-                            }
-                        }
-                        if(i == 4) {
-                            if (GB4_pressed()) {
-                                GB4_debounce();
-                                buttonExpexted[i] = false;
-                                score++;
-                            }
-                        }
-                    }
-                    buttontime[i]--;
-                } else {
-                    if (buttonExpexted[i]) {
-                        health--;
-                    }
+            if(buttonExpected[0]) {
+                if (GB1_pressed()) {
+                    GB1_debounce();
+                    buttonExpected[0] = false;
+                    score++;
+                    updateLCDflag = true;
                 }
+            }
+            if(buttonExpected[1]) {
+                if (GB2_pressed()) {
+                    GB2_debounce();
+                    buttonExpected[1] = false;
+                    score++;
+                    updateLCDflag = true;
+                }
+            }
+            if(buttonExpected[2]) {
+                if (GB3_pressed()) {
+                    GB3_debounce();
+                    buttonExpected[2] = false;
+                    score++;
+                    updateLCDflag = true;
+                }
+            }
+            if(buttonExpected[3]) {
+                if (GB4_pressed()) {
+                    GB4_debounce();
+                    buttonExpected[3] = false;
+                    score++;
+                    updateLCDflag = true;
+                }
+            }
+            if (updateLCDflag) {
+                updateLCD(score, health);
             }
         }
     }
+}
+
+void updateLCD(int score, int health) {
+    clearDisplay();
+    int i;
+
+    if (health < 0) {
+        printChar('G');
+        printChar('A');
+        printChar('M');
+        printChar('E');
+        printChar(' ');
+        printChar('O');
+        printChar('V');
+        printChar('E');
+        printChar('R');
+        commandInstruction(SET_CURSOR_MASK | 0x40);
+        snprintf(buffer, 3, "%d", score);
+        printChar('S');
+        printChar('c');
+        printChar('o');
+        printChar('r');
+        printChar('e');
+        printChar(':');
+        printChar(' ');
+        for (i = 0; i < 3; i++) {
+            printChar(buffer[i]);
+        }
+    } else {
+        snprintf(buffer, 3, "%d", score);
+        printChar('S');
+        printChar('c');
+        printChar('o');
+        printChar('r');
+        printChar('e');
+        printChar(':');
+        printChar(' ');
+        for (i = 0; i < 3; i++) {
+            printChar(buffer[i]);
+        }
+
+        commandInstruction(SET_CURSOR_MASK | 0x40);
+        snprintf(buffer, 1, "%d", health);
+        printChar('H');
+        printChar('e');
+        printChar('a');
+        printChar('l');
+        printChar('t');
+        printChar('h');
+        printChar(':');
+        printChar(' ');
+        for (i = 0; i < 3; i++) {
+            printChar(buffer[i]);
+        }
+    }
+    updateLCDflag = false;
 }
 
 /* Timer_A1 and CCRx (except CCR0) interrupt service routine */
@@ -217,7 +287,7 @@ void TA1_N_IRQHandler(void)
         TIMER_A1->CCTL[2] = TIMER_A1->CCTL[2] & 0xFFFE;
     }
 
-    /* Check if interrupt triggered by CCR2 */
+    /* Check if interrupt triggered by CCR3 */
     if(TIMER_A1->CCTL[3] & TIMER_A_CCTLN_CCIFG)
     {
         noteIndex = (noteIndex + 1) % NOTECNT;
@@ -226,6 +296,17 @@ void TA1_N_IRQHandler(void)
         TIMER_A0->CCR[0] = (6005000 / (noteArray[noteIndex] + 1)) - 1;
         TIMER_A0->CCR[1] = ((6005000 / (noteArray[noteIndex]) + 1) / 2) - 1;
 
+        // Update Buttons
+
+        if(buttonArray[noteIndex] != BNONE) {
+            buttonExpected[buttonArray[noteIndex] - 1] = true;
+            buttonTime[buttonArray[noteIndex] - 1] = SINGLENOTETIME;
+            TIMER_A1->CCR[4] = SINGLENOTETIME;
+            //Enable timer interrupt
+            TIMER_A1->CCTL[4] = 0x0000;
+        }
+
+
         // Clear CCR2 compare interrupt flag
         // clear flag in TA1CCTL2
         TIMER_A1->CCTL[3] = TIMER_A1->CCTL[3] & 0xFFFE;
@@ -233,6 +314,24 @@ void TA1_N_IRQHandler(void)
         // Schedule next interrupt interval
         TIMER_A1->CCR[2] = (TIMER_A1->CCR[3] + lengthArray[noteIndex]) % 0xFFFF;
         TIMER_A1->CCR[3] = (TIMER_A1->CCR[3] + lengthArray[noteIndex] + NOTEREST) % 0xFFFF;
+
+    }
+
+    /* Check if interrupt triggered by CCR4 */
+    if(TIMER_A1->CCTL[4] & TIMER_A_CCTLN_CCIFG)
+    {
+        // Update Buttons
+        int i;
+        for (i=0; i < 4; i++) {
+            if (buttonExpected[i]) {
+                health--;
+                buttonExpected[i] = false;
+            }
+        }
+        updateLCDflag = true;
+
+        // Clear CCR4 compare interrupt flag and turn off interrupt
+        TIMER_A1->CCTL[4] = 0x0000;
 
     }
 }
