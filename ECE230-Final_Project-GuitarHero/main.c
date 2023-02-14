@@ -60,7 +60,7 @@
 #define WHOLENOTE 64536
 
 // guitar button defines
-#define SINGLENOTETIME 3000
+#define SINGLENOTETIME 6000
 
 //define game
 #define INITHEALTH     9
@@ -220,6 +220,7 @@ void main(void)
                 updateLCD(score, health);
             }
             if (health <= 0) {
+                gameOverLCD(score, health);
                 TIMER_A0->CTL &= ~0x0010;
                 TIMER_A1->CTL &= ~0x0020;
                 playing = false;
@@ -238,8 +239,6 @@ void main(void)
                 TIMER_A1->CCR[3] = lengthArray[noteIndex] + NOTEREST;
                 // Set initial period in CCR4 register. This assumes timer starts at 0
                 TIMER_A1->CCR[4] = SINGLENOTETIME;
-
-                gameOverLCD(score, health);
             }
         }
     }
