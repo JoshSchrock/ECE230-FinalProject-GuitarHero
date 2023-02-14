@@ -25,12 +25,12 @@ extern "C"
 #include "msp.h"
 #include <stdbool.h>
 
-#define GB_PORT                                         P3
-#define GB_1_PIN                                        (0x0001)
-#define GB_2_PIN                                        (0x0002)
-#define GB_3_PIN                                        (0x0004)
-#define GB_4_PIN                                        (0x0008)
-#define GB_ALL_PINS                                     (0x000F)
+#define GB_PORT                                         P5
+#define GB_1_PIN                                        BIT4
+#define GB_2_PIN                                        BIT5
+#define GB_3_PIN                                        BIT6
+#define GB_4_PIN                                        BIT7
+#define GB_ALL_PINS                                     (0x00F0)
 
 /*!
  * \brief This function configures Both pushbutton pins as input pins

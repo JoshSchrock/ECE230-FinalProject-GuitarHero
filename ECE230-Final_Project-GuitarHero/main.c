@@ -62,6 +62,9 @@
 // guitar button defines
 #define SINGLENOTETIME 3000
 
+//define game
+#define INITHEALTH     9
+
 typedef enum _GuitarButtons {
     BNONE,       /* (0x0) */
     BONE,        /* (0x1) */
@@ -81,11 +84,13 @@ uint16_t buttonTime[4] = {0, 0, 0, 0};
 /* globals */
 int noteIndex = 0;
 int score = 0;
-int health = 9;
+int health = INITHEALTH;
 bool updateLCDflag = true;
-char buffer[3];
+char buffer[4];
 
 void updateLCD(int score, int health);
+void gameOverLCD(int score, int health);
+void startLCD(int score, int health);
 
 /**
  * main.c
@@ -104,6 +109,7 @@ void main(void)
     GB_init();
     // configures pins and delay library
     configLCD(CLK_FREQUENCY);
+    initLCD();
 
     /* Configure GPIO for speaker */
     P2->DIR |= BIT4;            // set P2.4 as output
@@ -165,102 +171,154 @@ void main(void)
                 TIMER_A0->CTL |= 0x0010;
                 TIMER_A1->CTL |= 0x0020;
                 playing = true;
+                startLCD(score, health);
             }
         }
         // what to do if playing
         if (playing) {
-            if(buttonExpected[0]) {
-                if (GB1_pressed()) {
-                    GB1_debounce();
+            if (GB1_pressed()) {
+                if(buttonExpected[0]) {
                     buttonExpected[0] = false;
                     score++;
-                    updateLCDflag = true;
+                } else {
+                    health--;
                 }
+                updateLCDflag = true;
+                GB1_debounce();
             }
-            if(buttonExpected[1]) {
-                if (GB2_pressed()) {
-                    GB2_debounce();
+            if (GB2_pressed()) {
+                if(buttonExpected[1]) {
                     buttonExpected[1] = false;
                     score++;
-                    updateLCDflag = true;
+                } else {
+                    health--;
                 }
+                updateLCDflag = true;
+                GB2_debounce();
             }
-            if(buttonExpected[2]) {
-                if (GB3_pressed()) {
-                    GB3_debounce();
+            if (GB3_pressed()) {
+                if (buttonExpected[2]) {
                     buttonExpected[2] = false;
                     score++;
-                    updateLCDflag = true;
+                } else {
+                    health--;
                 }
+                updateLCDflag = true;
+                GB3_debounce();
             }
-            if(buttonExpected[3]) {
-                if (GB4_pressed()) {
-                    GB4_debounce();
+            if (GB4_pressed()) {
+                if (buttonExpected[3]) {
                     buttonExpected[3] = false;
                     score++;
-                    updateLCDflag = true;
+                } else {
+                    health--;
                 }
+                updateLCDflag = true;
+                GB4_debounce();
             }
             if (updateLCDflag) {
                 updateLCD(score, health);
             }
+            if (health <= 0) {
+                TIMER_A0->CTL &= ~0x0010;
+                TIMER_A1->CTL &= ~0x0020;
+                playing = false;
+
+                health = INITHEALTH;
+                score = 0;
+
+                noteIndex = 0;
+                // Set Period in CCR0 register
+                TIMER_A0->CCR[0] = (6005000 / (noteArray[noteIndex] + 1)) - 1;
+                // Set high pulse-width in CCR1 register (determines duty cycle)
+                TIMER_A0->CCR[1] = ((6005000 / (noteArray[noteIndex]) + 1) / 2) - 1;
+                // Set initial period in CCR2 register. This assumes timer starts at 0
+                TIMER_A1->CCR[2] = lengthArray[noteIndex];
+                // Set initial period in CCR3 register. This assumes timer starts at 0
+                TIMER_A1->CCR[3] = lengthArray[noteIndex] + NOTEREST;
+                // Set initial period in CCR4 register. This assumes timer starts at 0
+                TIMER_A1->CCR[4] = SINGLENOTETIME;
+
+                gameOverLCD(score, health);
+            }
         }
     }
 }
-
-void updateLCD(int score, int health) {
+void gameOverLCD(int score, int health) {
     clearDisplay();
     int i;
 
-    if (health < 0) {
-        printChar('G');
-        printChar('A');
-        printChar('M');
-        printChar('E');
-        printChar(' ');
-        printChar('O');
-        printChar('V');
-        printChar('E');
-        printChar('R');
-        commandInstruction(SET_CURSOR_MASK | 0x40);
-        snprintf(buffer, 3, "%d", score);
-        printChar('S');
-        printChar('c');
-        printChar('o');
-        printChar('r');
-        printChar('e');
-        printChar(':');
-        printChar(' ');
-        for (i = 0; i < 3; i++) {
-            printChar(buffer[i]);
-        }
-    } else {
-        snprintf(buffer, 3, "%d", score);
-        printChar('S');
-        printChar('c');
-        printChar('o');
-        printChar('r');
-        printChar('e');
-        printChar(':');
-        printChar(' ');
-        for (i = 0; i < 3; i++) {
-            printChar(buffer[i]);
-        }
-
-        commandInstruction(SET_CURSOR_MASK | 0x40);
-        snprintf(buffer, 1, "%d", health);
-        printChar('H');
-        printChar('e');
-        printChar('a');
-        printChar('l');
-        printChar('t');
-        printChar('h');
-        printChar(':');
-        printChar(' ');
-        for (i = 0; i < 3; i++) {
-            printChar(buffer[i]);
-        }
+    printChar('G');
+    printChar('A');
+    printChar('M');
+    printChar('E');
+    printChar(' ');
+    printChar('O');
+    printChar('V');
+    printChar('E');
+    printChar('R');
+    commandInstruction(SET_CURSOR_MASK | 0x40);
+    snprintf(buffer, 4, "%d     ", score);
+    printChar('S');
+    printChar('c');
+    printChar('o');
+    printChar('r');
+    printChar('e');
+    printChar(':');
+    printChar(' ');
+    for (i = 0; i < 3; i++) {
+        printChar(buffer[i]);
     }
+    updateLCDflag = false;
+}
+
+void updateLCD(int score, int health) {
+    commandInstruction(SET_CURSOR_MASK | 0x07);
+
+    int i;
+    snprintf(buffer, 4, "%d     ", score);
+    for (i = 0; i < 3; i++) {
+        printChar(buffer[i]);
+    }
+
+    commandInstruction(SET_CURSOR_MASK | 0x48);
+    snprintf(buffer, 4, "%d     ", health);
+    for (i = 0; i < 3; i++) {
+        printChar(buffer[i]);
+    }
+
+    updateLCDflag = false;
+}
+
+void startLCD(int score, int health) {
+    clearDisplay();
+    int i;
+    snprintf(buffer, 4, "%d     ", score);
+    printChar('S');
+    printChar('c');
+    printChar('o');
+    printChar('r');
+    printChar('e');
+    printChar(':');
+    printChar(' ');
+    for (i = 0; i < 3; i++) {
+        printChar(buffer[i]);
+    }
+
+    commandInstruction(SET_CURSOR_MASK | 0x40);
+    snprintf(buffer, 4, "%d     ", health);
+    printChar('H');
+    printChar('e');
+    printChar('a');
+    printChar('l');
+    printChar('t');
+    printChar('h');
+    printChar(':');
+    printChar(' ');
+    for (i = 0; i < 3; i++) {
+        printChar(buffer[i]);
+    }
+
     updateLCDflag = false;
 }
 
@@ -301,9 +359,9 @@ void TA1_N_IRQHandler(void)
         if(buttonArray[noteIndex] != BNONE) {
             buttonExpected[buttonArray[noteIndex] - 1] = true;
             buttonTime[buttonArray[noteIndex] - 1] = SINGLENOTETIME;
-            TIMER_A1->CCR[4] = SINGLENOTETIME;
+            TIMER_A1->CCR[4] = TIMER_A1->CCR[3] + SINGLENOTETIME;
             //Enable timer interrupt
-            TIMER_A1->CCTL[4] = 0x0000;
+            TIMER_A1->CCTL[4] = 0x0010;
         }
 
 
@@ -326,9 +384,9 @@ void TA1_N_IRQHandler(void)
             if (buttonExpected[i]) {
                 health--;
                 buttonExpected[i] = false;
+                updateLCDflag = true;
             }
         }
-        updateLCDflag = true;
 
         // Clear CCR4 compare interrupt flag and turn off interrupt
         TIMER_A1->CCTL[4] = 0x0000;
