@@ -79,16 +79,15 @@ typedef enum _GuitarButtons {
 /* OLED defines */
 //unsigned char TEXT_ARR[1024];
 //unsigned char LOGO_ARR[1024];
-const char line1[] = "   /  |   |  \\  ";
-const char line2[] = "  /   |   |   \\ ";
-const char line3[] = " /    |   |    \\";
-const char line4[] = " O    O   O    O ";
 
 /* song defines */
 #define NOTECNT 90
 const uint16_t noteArray[NOTECNT] =   {NOTEG4,      NOTENONE,  NOTED4,    NOTEG4,      NOTENONE,  NOTED4,      NOTEG4,    NOTED4,    NOTEG4,    NOTEB4,    NOTED5,      NOTENONE,  NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,      NOTENONE,  NOTEA4,    NOTEC5,    NOTEA4,    NOTEF4SHARP, NOTEA4,    NOTED4,      NOTENONE,    NOTEG4,    NOTENONE,  NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEG4,    NOTEC5,    NOTEF4SHARP, NOTEA4,    NOTEG4,    NOTEG4,  NOTEB4,    NOTEA4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEF4SHARP, NOTEA4,    NOTEC5,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEG4,    NOTEF4SHARP, NOTEE4,    NOTEF4SHARP, NOTEG4,    NOTEG4,    NOTEB4,    NOTEA4,    NOTEG4,    NOTEA4,    NOTEB4,    NOTEB4,    NOTED5,    NOTEC5,    NOTEB4,    NOTEC5,    NOTED5,      NOTENONE,    NOTED4,   NOTEE4,   NOTED4,    NOTEC4,     NOTEC4,      NOTEC4,    NOTEB3,     NOTEB3,      NOTEB3,    NOTEA3,     NOTEA3,      NOTEG3,    NOTEF3SHARP, NOTEE3,    NOTEF3SHARP, NOTEG3,    NOTENONE,  NOTEA3,    NOTENONE,  NOTEB3,    NOTENONE,  NOTENONE};
 const uint16_t lengthArray[NOTECNT] = {QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, TIENOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   TIENOTE,     EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE, QUARTERNOTE, HALFNOTE, HALFNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, SIXTIENOTE, QUARTERNOTE, EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE,   EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, EIGHTNOTE, QUARTERNOTE};
 const uint16_t buttonArray[NOTECNT] = {BTWO,        BONE,      BTWO,      BTHREE,      BNONE,     BTWO,      BTWO,      BTWO,      BTWO,      BTWO,      BTHREE,      BNONE,       BONE,         BNONE,     BNONE,     BNONE,       BNONE,     BNONE,     BNONE,     BNONE,     BNONE,       BNONE,     BNONE,       BNONE,       BNONE,     BNONE,     BNONE,   BNONE,     BNONE,     BNONE,     BNONE,     BNONE,       BNONE,       BNONE,     BNONE,     BNONE,        BNONE,    BNONE,     BNONE,   BNONE,     BNONE,     BNONE,     BNONE,     BNONE,        BNONE,       BNONE ,   BNONE,      BNONE,      BNONE,     BNONE};
+bool buttonLine1[4] = {false, false, false, false};
+bool buttonLine2[4] = {false, false, false, false};
+bool buttonLine3[4] = {false, false, false, false};
 bool buttonExpected[4] = {false, false, false, false};
 uint16_t buttonTime[4] = {0, 0, 0, 0};
 
@@ -127,11 +126,6 @@ void main(void)
     display_on();
     display_clear();
     display_on();
-
-    draw_line(1,1,line1);
-    draw_line(2,1,line2);
-    draw_line(3,1,line3);
-    draw_line(4,1,line4);
 
 //    Display_Logo(1,1,0);
 //    Display_Logo(2,1,2);
@@ -266,8 +260,71 @@ void main(void)
                 // Set initial period in CCR4 register. This assumes timer starts at 0
                 TIMER_A1->CCR[4] = SINGLENOTETIME;
             }
+            unsigned char line1[] = "   /  |   |  \\  ";
+            unsigned char line2[] = "  /   |   |   \\ ";
+            unsigned char line3[] = " /    |   |    \\";
+            unsigned char line4[] = " _    _   _    _ ";
+            // line 1
+            if (buttonLine1[0]) {
+                line1[3] = 'O';
+            }
+            if (buttonLine1[1]) {
+                line1[6] = 'O';
+            }
+            if (buttonLine1[2]) {
+                line1[10] = 'O';
+            }
+            if (buttonLine1[3]) {
+                line1[13] = 'O';
+            }
+            draw_line(1,1,line1);
+
+            // line 2
+            if (buttonLine2[0]) {
+                line2[2] = 'O';
+            }
+            if (buttonLine2[1]) {
+                line2[6] = 'O';
+            }
+            if (buttonLine2[2]) {
+                line2[10] = 'O';
+            }
+            if (buttonLine2[3]) {
+                line2[14] = 'O';
+            }
+            draw_line(2,1,line2);
+
+            // line 3
+            if (buttonLine3[0]) {
+                line3[1] = 'O';
+            }
+            if (buttonLine3[1]) {
+                line3[6] = 'O';
+            }
+            if (buttonLine3[2]) {
+                line3[10] = 'O';
+            }
+            if (buttonLine3[3]) {
+                line3[15] = 'O';
+            }
+            draw_line(3,1,line3);
+
+            // line 4
+            if (buttonExpected[0]) {
+                line4[1] = 'O';
+            }
+            if (buttonExpected[1]) {
+                line4[6] = 'O';
+            }
+            if (buttonExpected[2]) {
+                line4[10] = 'O';
+            }
+            if (buttonExpected[3]) {
+                line4[15] = 'O';
+            }
+            draw_line(4,1,line4);
             write_display(getTextArr());
-            msdelay(500);
+            msdelay(1);
         }
     }
 }
@@ -386,9 +443,25 @@ void TA1_N_IRQHandler(void)
         if(buttonArray[noteIndex] != BNONE) {
             buttonExpected[buttonArray[noteIndex] - 1] = true;
             buttonTime[buttonArray[noteIndex] - 1] = SINGLENOTETIME;
-            TIMER_A1->CCR[4] = TIMER_A1->CCR[3] + SINGLENOTETIME;
+            TIMER_A1->CCR[4] = TIMER_A1->CCR[3] + (((lengthArray[noteIndex] / 2) > (SINGLENOTETIME)) ? (lengthArray[noteIndex] / 2) : (SINGLENOTETIME));
             //Enable timer interrupt
             TIMER_A1->CCTL[4] = 0x0010;
+        }
+        int i;
+        for(i = 0; i < 4; i++) {
+            buttonLine1[i] = false;
+            buttonLine2[i] = false;
+            buttonLine3[i] = false;
+        }
+
+        if(buttonArray[noteIndex + 1] != BNONE) {
+            buttonLine3[buttonArray[(noteIndex + 1) % NOTECNT] - 1] = true;
+        }
+        if(buttonArray[noteIndex + 2] != BNONE) {
+            buttonLine2[buttonArray[(noteIndex + 2) % NOTECNT] - 1] = true;
+        }
+        if(buttonArray[noteIndex + 3] != BNONE) {
+            buttonLine1[buttonArray[(noteIndex + 3) % NOTECNT] - 1] = true;
         }
 
 
