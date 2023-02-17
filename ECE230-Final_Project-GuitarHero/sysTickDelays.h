@@ -20,6 +20,9 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define UNDERFLOW       2
 #define OVERFLOW        1
 #define SUCCESS         0
