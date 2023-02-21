@@ -2,7 +2,7 @@
  * OLED_cmd.c
  *
  *  Created on: Feb 17, 2023
- *      Author: schrocjq
+ *      Author: Josh Schrock and RAJ JOHRI
  */
 #include "i2c_ops.h"
 #include "oled.h"
