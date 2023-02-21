@@ -190,6 +190,7 @@ void main(void)
                 playing = true;
                 startLCD(score, health);
             }
+        }
         // check for song switch
         if(BUTTON1_pressed()) {
             BUTTON1_debounce();
