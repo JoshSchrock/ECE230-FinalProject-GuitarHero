@@ -35,7 +35,7 @@ extern "C"
 /*!
  * \brief This function configures Both pushbutton pins as input pins
  *
- * This function configures P1.1 and P1.4 as input pins
+ * This function configures P5.4 - P5.7 as input pins
  *
  * \return None
  */
@@ -43,7 +43,7 @@ extern void GB_init(void);
 
 
 /*!
- * \brief This function returns the state of PushButton1
+ * \brief This function returns the state of guitarButton1
  *
  * This function returns true if the button is pressed
  *
@@ -53,7 +53,7 @@ extern bool GB1_pressed(void);
 
 
 /*!
- * \brief This function returns the state of PushButton2
+ * \brief This function returns the state of guitarButton2
  *
  * This function returns true if the button is pressed
  *
@@ -63,7 +63,7 @@ extern bool GB2_pressed(void);
 
 
 /*!
- * \brief This function returns the state of PushButton1
+ * \brief This function returns the state of guitarButton3
  *
  * This function returns true if the button is pressed
  *
@@ -73,7 +73,7 @@ extern bool GB3_pressed(void);
 
 
 /*!
- * \brief This function returns the state of PushButton2
+ * \brief This function returns the state of guitarButton4
  *
  * This function returns true if the button is pressed
  *
@@ -83,7 +83,7 @@ extern bool GB4_pressed(void);
 
 
 /*!
- * \brief This function de-bounces pushButton1
+ * \brief This function de-bounces guitarButton1
  *
  * This function de-bounces pushButton1
  *
@@ -93,18 +93,18 @@ extern void GB1_debounce(void);
 
 
 /*!
- * \brief This function de-bounces pushButton2
+ * \brief This function de-bounces guitarButton2
  *
- * This function de-bounces pushButton2
+ * This function de-bounces guitarButton2
  *
  * \return boolean
  */
 extern void GB2_debounce(void);
 
 /*!
- * \brief This function de-bounces pushButton1
+ * \brief This function de-bounces guitarButton3
  *
- * This function de-bounces pushButton1
+ * This function de-bounces guitarButton3
  *
  * \return boolean
  */
@@ -112,9 +112,9 @@ extern void GB3_debounce(void);
 
 
 /*!
- * \brief This function de-bounces pushButton2
+ * \brief This function de-bounces guitarButton4
  *
- * This function de-bounces pushButton2
+ * This function de-bounces guitarButton4
  *
  * \return boolean
  */

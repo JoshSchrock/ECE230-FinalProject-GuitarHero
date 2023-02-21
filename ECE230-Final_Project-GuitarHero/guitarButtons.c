@@ -107,7 +107,6 @@ void GB4_debounce(void) {
 /* Timer_A2 and CCRx (except CCR0) interrupt service routine */
 void TA2_N_IRQHandler(void)
 {
-    P1->OUT |= BIT0;
     /* Check if interrupt triggered by timer overflow */
     if(TIMER_A2->CTL & TIMER_A_CTL_IFG)
     {
@@ -159,6 +158,5 @@ void TA2_N_IRQHandler(void)
             GB4_debounce();
         }
     }
-    P1->OUT &= ~BIT0;
 }
 

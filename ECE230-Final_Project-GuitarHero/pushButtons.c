@@ -31,12 +31,10 @@ bool BUTTON2_pressed(void) {
 }
 
 void BUTTON1_debounce(void) {
-    for(weakDelay = 0x1400; weakDelay > 0; weakDelay--) {
+    for(weakDelay = 0x2000; weakDelay > 0; weakDelay--) {
     }
-    while (BUTTON1_pressed()) {
-
-    }
-    for(weakDelay = 0x1400; weakDelay > 0; weakDelay--) {
+    if (BUTTON1_pressed()) {
+        BUTTON1_debounce();
     }
 }
 
